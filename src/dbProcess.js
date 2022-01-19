@@ -259,6 +259,7 @@ app.get('/tables/:tableId', (request, response) => {
             log(error);
         }
 
+        log('Get Table Request Processed')
         response.send(result);
     } catch (error) {
         log(error);
@@ -283,6 +284,7 @@ app.get('/tables/:tableId/rows', (request, response) => {
             log(error);
         }
 
+        log('Get rows Request Processed')
         response.status(200)
         response.send({ data: results });
     } catch (error) {
