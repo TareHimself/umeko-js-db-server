@@ -1,7 +1,20 @@
 const cluster = require('cluster');
 const os = require('os');
-
+const fs = require('fs');
 process.env = require('../secretes.json');
+
+
+const db = require('better-sqlite3')('./src/database.db', { fileMustExist: true });
+
+// fix concurrency issues
+db.pragma('journal_mode = WAL');
+setInterval(fs.stat.bind(null, './src/database.db-wal', (err, stat) => {
+    if (err) {
+      if (err.code !== 'ENOENT') throw err;
+    } else if (stat.size / (1024*1024) > 50) {
+      db.pragma('wal_checkpoint(RESTART)');
+    }
+  }), 5000).unref();
 
 function time(sep = '') {
 
