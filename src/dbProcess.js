@@ -43,13 +43,13 @@ function log(data) {
 
     const argumentValues = Object.values(arguments);
 
-    argumentValues.unshift(`${cluster.isMaster ? "Master" : "Child"} ID-${process.pid} ::`);
-
     const stack = new Error().stack;
     const pathDelimiter = process.platform === 'linux' ? '/' : '\\';
     const simplifiedStack = stack.split('\n')[2].split(pathDelimiter);
     const file = simplifiedStack[simplifiedStack.length - 1].split(')')[0];
     argumentValues.unshift(`${file} ::`);
+
+    argumentValues.unshift(`${cluster.isMaster ? "Master" : "Child"} ID-${process.pid} ::`);
 
     argumentValues.unshift(`${time(':')} ::`);
 
@@ -87,7 +87,11 @@ function doesTableExist(tableName) {
 }
 
 app.get('/', async (request, response) => {
-    response.send('You Should\'nt be here');
+    response.send({id : 'umeko-js-db-server'});
+});
+
+app.get('/ping', async (request, response) => {
+    response.send({ recieved_at : Date.now() });
 });
 
 app.use(function (request, response, next) {

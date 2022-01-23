@@ -44,20 +44,9 @@ if (cluster.isMaster) {
     for (let i = 0; i < cpus; i++) {
         cluster.fork(process.env);
     }
-    /*// set console's directory so we can see output from workers
-    console.dir(cluster.workers, {depth: 0});
-
-    // initialize our CLI 
-    process.stdin.on('data', (data) => {
-        initControlCommands(data);
-    })*/
 
     cluster.on('exit', (worker, code) => {
-        // Good exit code is 0 :))
-        // exitedAfterDisconnect ensures that it is not killed by master cluster or manually
-        // if we kill it via .kill or .disconnect it will be set to true
-        // \x1b[XXm represents a color, and [0m represent the end of this 
-        //color in the console ( 0m sets it to white again )
+
         if (code !== 0 && !worker.exitedAfterDisconnect) {
             log(`\x1b[34mWorker ${worker.process.pid} crashed.\nStarting a new worker...\n\x1b[0m`);
             const nw = cluster.fork();
@@ -65,6 +54,5 @@ if (cluster.isMaster) {
         }
     });
 } else {
-    // how funny, this is all needed for workers to start
-     require('./dbProcess.js');
+     require('./dbProcess');
 }
