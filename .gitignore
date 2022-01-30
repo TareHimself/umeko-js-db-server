@@ -76,3 +76,8 @@ secretes.json
 .fusebox/
 
 src/backups
+
+
+*.db
+*.db-wal
+*.db-shm
