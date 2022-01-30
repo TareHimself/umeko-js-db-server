@@ -16,6 +16,8 @@ setInterval(fs.stat.bind(null, './src/database.db-wal', (err, stat) => {
     }
   }), 5000).unref();
 
+
+
 function time(sep = '') {
 
     const currentDate = new Date();
@@ -38,6 +40,14 @@ function time(sep = '') {
 
     return `${year}${sep}${month}${sep}${date}${sep}${hours}${sep}${minutes}${sep}${seconds}`;
 }
+
+if(!fs.existsSync('./src/backups')) fs.mkdirSync('./src/backups');
+
+db.backup(`./src/backups/backup-${time('-')}.db`);
+
+setInterval(()=>{
+    db.backup(`./src/backups/backup-${time('-')}.db`);
+}, 1.44e+7).unref();// every 4 hours
 
 function log(data) {
 
