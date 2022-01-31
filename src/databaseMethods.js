@@ -112,8 +112,6 @@ async function getTables(request, response) {
 
             const fields = request.query.fields !== undefined ? request.query.fields : '*';
             const sqliteStatement = `SELECT ${fields} FROM sqlite_master WHERE type='table' ${whereStatement} ;`;
-
-            log(sqliteStatement);
             
             result = db.prepare(sqliteStatement).all();
             response.send(result);
