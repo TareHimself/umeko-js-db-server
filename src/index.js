@@ -51,6 +51,12 @@ function log(data) {
 
     const argumentValues = Object.values(arguments);
 
+    const stack = new Error().stack;
+    const pathDelimiter = process.platform !== 'win32' ? '/' : '\\';
+    const simplifiedStack = stack.split('\n')[2].split(pathDelimiter);
+    const file = simplifiedStack[simplifiedStack.length - 1].split(')')[0];
+    argumentValues.unshift(`${file} ::`);
+
     argumentValues.unshift(`${time(':')} :: ${cluster.isMaster ? "Master" : "Child"} ID-${process.pid} ::`);
 
     console.log.apply(null, argumentValues);
