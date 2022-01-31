@@ -32,7 +32,7 @@ function log(data) {
     const argumentValues = Object.values(arguments);
 
     const stack = new Error().stack;
-    const pathDelimiter = process.platform === 'linux' ? '/' : '\\';
+    const pathDelimiter = process.platform !== 'win32' ? '/' : '\\';
     const simplifiedStack = stack.split('\n')[2].split(pathDelimiter);
     const file = simplifiedStack[simplifiedStack.length - 1].split(')')[0];
     argumentValues.unshift(`${file} ::`);
@@ -99,7 +99,7 @@ async function getTables(request, response) {
 
             let whereStatement = '';
 
-            const specificRows = request.body;
+            const specificRows = request.query.data ? request.query.data.split(',') : [];
 
             if(specificRows && specificRows.length)
             {
@@ -138,11 +138,12 @@ async function getRows(request, response) {
         if (!doesTableExist(tableName)) return response.send({ error: "Table does not exist" });
 
         try {
-            const fields = request.query.fields !== undefined ? request.query.fields : '*';
+
+            const fields = request.query.fields && request.query.fields.length ? request.query.fields : '*';
 
             let whereStatement = '';
 
-            const specificRows = request.body;
+            const specificRows = request.query.data ? request.query.data.split(',') : [];
 
             if(specificRows && specificRows.length)
             {
