@@ -43,8 +43,6 @@ function time(sep = '') {
 
 if(!fs.existsSync('./src/backups')) fs.mkdirSync('./src/backups');
 
-db.backup(`./src/backups/backup-${time('-')}.db`);
-
 setInterval(()=>{
     db.backup(`./src/backups/backup-${time('-')}.db`);
 }, 1.44e+7).unref();// every 4 hours
