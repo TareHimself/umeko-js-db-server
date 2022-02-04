@@ -78,6 +78,7 @@ async function getServerInfo(request, response) {
     try {
         response.send({ id: 'umeko-js-db-server' });
     } catch (error) {
+        response.send({ error: error.message })
         log(error);
     }
 }
@@ -86,6 +87,7 @@ async function getServerPing(request, response) {
     try {
         response.send({ recieved_at: Date.now() });
     } catch (error) {
+        response.send(error.message);
         log(error);
     }
 }
@@ -95,36 +97,31 @@ async function getTables(request, response) {
 
         let result = {};
 
-        try {
+        let whereStatement = '';
 
-            let whereStatement = '';
+        const specificRows = request.query.data ? request.query.data.split(',') : [];
 
-            const specificRows = request.query.data ? request.query.data.split(',') : [];
+        if (specificRows && specificRows.length) {
+            whereStatement += 'AND (';
 
-            if(specificRows && specificRows.length)
-            {
-                whereStatement += 'AND (';
-
-                specificRows.forEach(row => {
-                    whereStatement += `name='${row}'${row === specificRows[specificRows.length - 1] ? ")" : " OR "}`;
-                })
-            }
-
-            const fields = request.query.fields !== undefined ? request.query.fields : '*';
-            const sqliteStatement = `SELECT ${fields} FROM sqlite_master WHERE type='table' ${whereStatement} ;`;
-            
-            result = db.prepare(sqliteStatement).all();
-            response.send(result);
-        } catch (error) {
-            response.send({error : error.message});
+            specificRows.forEach(row => {
+                whereStatement += `name='${row}'${row === specificRows[specificRows.length - 1] ? ")" : " OR "}`;
+            })
         }
 
+        const fields = request.query.fields !== undefined ? request.query.fields : '*';
+        const sqliteStatement = `SELECT ${fields} FROM sqlite_master WHERE type='table' ${whereStatement} ;`;
+
+        result = db.prepare(sqliteStatement).all();
+        response.send(result);
+
         log('Get Table Request Processed')
-        
+
     } catch (error) {
+        response.send({ error: error.message });
         log(error);
     }
-    
+
 }
 
 async function getRows(request, response) {
@@ -135,35 +132,30 @@ async function getRows(request, response) {
 
         if (!doesTableExist(tableName)) return response.send({ error: "Table does not exist" });
 
-        try {
+        const fields = request.query.fields && request.query.fields.length ? request.query.fields : '*';
 
-            const fields = request.query.fields && request.query.fields.length ? request.query.fields : '*';
+        let whereStatement = '';
 
-            let whereStatement = '';
+        const specificRows = request.query.data ? request.query.data.split(',') : [];
 
-            const specificRows = request.query.data ? request.query.data.split(',') : [];
+        if (specificRows && specificRows.length) {
+            whereStatement += 'WHERE ';
 
-            if(specificRows && specificRows.length)
-            {
-                whereStatement += 'WHERE ';
-
-                const primaryKey = db.prepare(`Select name FROM pragma_table_info('${tableName}') WHERE pk=1;`).pluck().all()[0];
-                specificRows.forEach(row => {
-                    whereStatement += `${primaryKey}='${row}'${row === specificRows[specificRows.length - 1] ? "" : " OR "}`;
-                })
-            }
-            const sqliteStatement = `SELECT ${fields} FROM '${tableName}' ${whereStatement}`;
-
-
-            results = db.prepare(sqliteStatement).all();
-            response.send(results);
-        } catch (error) {
-            response.send({error : error.message});
+            const primaryKey = db.prepare(`Select name FROM pragma_table_info('${tableName}') WHERE pk=1;`).pluck().all()[0];
+            specificRows.forEach(row => {
+                whereStatement += `${primaryKey}='${row}'${row === specificRows[specificRows.length - 1] ? "" : " OR "}`;
+            })
         }
+        const sqliteStatement = `SELECT ${fields} FROM '${tableName}' ${whereStatement}`;
+
+
+        results = db.prepare(sqliteStatement).all();
+        response.send(results);
 
         log('Get rows Request Processed')
-        
+
     } catch (error) {
+        response.send({ error: error.message });
         log(error);
     }
 }
@@ -200,6 +192,7 @@ async function createTables(request, response) {
         response.send(results);
 
     } catch (error) {
+        response.send({ error: error.message })
         log(error);
     }
 }
@@ -212,6 +205,7 @@ async function updateColumns(request, response) {
 
         response.send({ 'result': 'Not yet implemented' });
     } catch (error) {
+        response.send({ error: error.message });
         log(error);
     }
 }
@@ -226,8 +220,6 @@ async function updateRows(request, response) {
 
         if (!rowsFromUser || !rowsFromUser.length) return response.send({ error: "No rows sent" })
 
-
-
         const primaryKey = db.prepare(`Select name FROM pragma_table_info('${tableName}') WHERE pk=1;`).pluck().all()[0];
 
         let whereStatement = 'WHERE ';
@@ -236,7 +228,7 @@ async function updateRows(request, response) {
             whereStatement += `${primaryKey}='${row[primaryKey]}'${row === rowsFromUser[rowsFromUser.length - 1] ? "" : " OR "}`;
         })
 
-        
+
 
         const rowsInTable = db.prepare(`SELECT ${primaryKey} FROM '${tableName}' ${whereStatement}`).all();
 
@@ -245,46 +237,46 @@ async function updateRows(request, response) {
         const rowsToInsert = rowsFromUser.filter(row => !primaryKeysInTable.includes(row[primaryKey]));
         const rowsToUpdate = rowsFromUser.filter(row => primaryKeysInTable.includes(row[primaryKey]));
 
-        const result = { inserted : 0 , updated : 0};
+        const result = { inserted: 0, updated: 0 };
 
-        rowsToInsert.forEach((row)=>{
+        rowsToInsert.forEach((row) => {
 
-                const keys = Object.keys(row);
-                const values = Array.from(keys);
+            const keys = Object.keys(row);
+            const values = Array.from(keys);
 
-                values.forEach(function (value, i) {
-                    values[i] = "@" + value;
-                });
+            values.forEach(function (value, i) {
+                values[i] = "@" + value;
+            });
 
-                const finalStatement = `INSERT INTO \`${tableName}\` (${keys.toString()}) VALUES (${values.toString()})`;
+            const finalStatement = `INSERT INTO \`${tableName}\` (${keys.toString()}) VALUES (${values.toString()})`;
 
-                const result = db.prepare(finalStatement).run(row);
+            const result = db.prepare(finalStatement).run(row);
 
-                if (result.changes > 0) {
-                    result.inserted++;
-                }
+            if (result.changes > 0) {
+                result.inserted++;
+            }
         });
 
-        rowsToUpdate.forEach((row)=>{
+        rowsToUpdate.forEach((row) => {
             const keys = Object.keys(row);
 
-                keys.forEach(function (key, i) {
-                    if (typeof row[key] !== 'number') {
-                        keys[i] = `${key}='${row[key]}'`;
-                    }
-                    else {
-                        keys[i] = `${key}=${row[key]}`;
-                    }
-
-                });
-
-                const finalStatement = `UPDATE \`${tableName}\` SET ${keys.toString()} WHERE ${primaryKey}='${row[primaryKey]}'`;
-
-                const result = db.prepare(finalStatement).run(row);
-
-                if (result.changes > 0) {
-                    result.updated++;
+            keys.forEach(function (key, i) {
+                if (typeof row[key] !== 'number') {
+                    keys[i] = `${key}='${row[key]}'`;
                 }
+                else {
+                    keys[i] = `${key}=${row[key]}`;
+                }
+
+            });
+
+            const finalStatement = `UPDATE \`${tableName}\` SET ${keys.toString()} WHERE ${primaryKey}='${row[primaryKey]}'`;
+
+            const result = db.prepare(finalStatement).run(row);
+
+            if (result.changes > 0) {
+                result.updated++;
+            }
         });
 
         response.send(result);
@@ -330,6 +322,7 @@ async function deleteTables(request, response) {
         }
 
     } catch (error) {
+        response.send({ error: error.message })
         log(error);
     }
 }
@@ -338,53 +331,42 @@ async function deleteRows(request, response) {
     try {
         const tableName = request.params.tableId;
 
-        if (!doesTableExist( tableName)) return response.send({ error: "Table does not exist" });
+        if (!doesTableExist(tableName)) return response.send({ error: "Table does not exist" });
 
-        const body = request.body;
+        const primaryKey = db.prepare(`Select name FROM pragma_table_info('${tableName}') WHERE pk=1;`).pluck().all()[0];
 
-        try {
-            const keys = Object.keys(body);
+        let whereStatement = '';
 
-            keys.forEach(function (key, i) {
-                if (typeof body[key] !== 'number') {
-                    keys[i] = `${key}='${body[key]}'`;
-                }
-                else {
-                    keys[i] = `${key}=${body[key]}`;
-                }
-            });
+        const specificRows = request.query.data ? request.query.data.split(',') : [];
 
-            const whereStatement = request.query.where !== undefined ? `WHERE ${request.query.where}` : '';
-            if (whereStatement === '') {
-                response.status(200)
-                response.send({ error: `No 'Where'statement specified` });
-                return;
-            }
+        if (specificRows && specificRows.length) {
+            whereStatement += 'WHERE ';
 
-            const result = db.prepare(`DELETE FROM \`${tableName}\` ${whereStatement};`).run();
-
-            response.status(200);
-
-            if (result.changes > 0) {
-                response.send({ 'result': 'success' });
-            }
-            else {
-                response.send({ 'error': 'The row could not be deleted or does not exist' });
-            }
-
-        } catch (error) {
-            log(error)
-            return response.send({ 'error': error.message });
+            specificRows.forEach(row => {
+                whereStatement += `${primaryKey}='${row}'${row === specificRows[specificRows.length - 1] ? "" : " OR "}`;
+            })
         }
+
+        const result = db.prepare(`DELETE FROM \`${tableName}\` ${whereStatement};`).run();
+
+
+        if (result.changes > 0) {
+            response.send({ result: 'success' });
+        }
+        else {
+            response.send({ error: 'The row could not be deleted or does not exist' });
+        }
+
     } catch (error) {
-        log(error);
+        log(error)
+        return response.send({ 'error': error.message });
     }
 }
 
 module.exports = {
 
     log: log,
-    verifyRequest : verifyRequest,
+    verifyRequest: verifyRequest,
     getServerInfo: getServerInfo,
     getServerPing: getServerPing,
     getTables: getTables,
