@@ -8,5 +8,9 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "heatsync": "^2.2.1"
+  },
+  "devDependencies": {
+    "node": "^16.10.0",
+    "npm": "^8.4.1"
   }
 }
