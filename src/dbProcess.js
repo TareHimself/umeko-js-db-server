@@ -23,7 +23,7 @@ app.get('/ping', async (request, response) => {
 app.use(function (request, response, next) {
     if (!methods.verifyRequest(request)) {
         response.status(401);
-        methods.log('Recieved Unauthorized Request')
+        methods.log('Recieved Unauthorized Request');
         return response.send({ error: "Invalid Authentication" });
     }
     next();
