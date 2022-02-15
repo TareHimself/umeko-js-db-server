@@ -291,37 +291,19 @@ async function deleteTables(request, response) {
     try {
 
         const tablesFromUser = request.query.data ? request.query.data.split(',') : undefined;
-
-        const tablesFromUser =  ? request.query.data.split(',') : undefined;
-
-        if (!tablesFromUser || !tablesFromUser.sort) return response.send({ error: "Please send an empty array to delete all tables" });
+        
+        if (!tablesFromUser || !tablesFromUser.sort) return response.send({ error: "No Tables Sent" });
 
         if (tablesFromUser.length) {
 
             tablesFromUser.forEach((table) => {
                 const sqliteStatement = `DROP TABLE IF EXISTS \`${table}\`;`;
                 db.prepare(sqliteStatement).run();
-
             });
 
             response.send({ result: 'success' });
         }
-        else if(request.query.confirm && request.query.confirm === 'true'){
-            let tables = []
 
-            tables = db.prepare(`select name from sqlite_master where type='table';`).all();
-
-            tables.forEach(function (table, i) {
-                tables[i] = table.name;
-            });
-
-            tables.forEach(function (table) {
-                const sqliteStatement = `DROP TABLE IF EXISTS \`${table}\`;`;
-                db.prepare(sqliteStatement).run();
-            })
-
-            response.send({ result: 'success' });
-        }
 
     } catch (error) {
         response.send({ error: error.message })
