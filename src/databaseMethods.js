@@ -290,7 +290,7 @@ async function updateRows(request, response) {
 async function deleteTables(request, response) {
     try {
 
-        const tablesFromUser = request.body;
+        const tablesFromUser = request.query.data ? request.query.data.split(',') : [];
 
         if (!tablesFromUser || !tablesFromUser.sort) return response.send({ error: "Please send an empty array to delete all tables" });
 
