@@ -290,7 +290,9 @@ async function updateRows(request, response) {
 async function deleteTables(request, response) {
     try {
 
-        const tablesFromUser = request.query.data ? request.query.data.split(',') : [];
+        const tablesFromUser = request.query.data ? request.query.data.split(',') : undefined;
+
+        const tablesFromUser =  ? request.query.data.split(',') : undefined;
 
         if (!tablesFromUser || !tablesFromUser.sort) return response.send({ error: "Please send an empty array to delete all tables" });
 
@@ -304,7 +306,7 @@ async function deleteTables(request, response) {
 
             response.send({ result: 'success' });
         }
-        else {
+        else if(request.query.confirm && request.query.confirm === 'true'){
             let tables = []
 
             tables = db.prepare(`select name from sqlite_master where type='table';`).all();
