@@ -3,6 +3,43 @@ const os = require('os');
 const fs = require('fs');
 process.env = require('../secretes.json');
 
+const initialStatements = [
+    `
+    CREATE TABLE IF NOT EXISTS guilds(
+        id TEXT PRIMARY KEY,
+        color TEXT DEFAULT '#2f3136',
+        prefix TEXT DEFAULT '?',
+        nickname TEXT DEFAULT 'Umeko',
+        language TEXT DEFAULT 'en',
+        welcome_options TEXT DEFAULT '',
+        leave_options TEXT DEFAULT '',
+        twitch_options TEXT DEFAULT '',
+        leveling_options TEXT DEFAULT ''
+    ) WITHOUT ROWID;
+    `,
+    `
+    CREATE TABLE IF NOT EXISTS users(
+        id TEXT PRIMARY KEY,
+        color TEXT DEFAULT '#87ceeb',
+        card_bg_url TEXT DEFAULT '',
+        card_opacity REAL DEFAULT 0.8,
+        options TEXT DEFAULT ''
+    ) WITHOUT ROWID;
+    `,
+    `
+    CREATE TABLE IF NOT EXISTS levels(
+        guild REFERENCES guilds(id),
+        user REFERENCES users(id),
+        level INTEGER DEFAULT 0,
+        progress INTEGER DEFAULT 0
+    );
+    `,
+    `
+    CREATE INDEX IF NOT EXISTS idx_levels
+    ON levels (guild,user);
+    `
+]
+
 function time(sep = '') {
 
     const currentDate = new Date();
@@ -26,8 +63,6 @@ function time(sep = '') {
     return `${year}${sep}${month}${sep}${date}${sep}${hours}${sep}${minutes}${sep}${seconds}`;
 }
 
-
-
 function log(data) {
 
     const argumentValues = Object.values(arguments);
@@ -36,32 +71,43 @@ function log(data) {
     const pathDelimiter = process.platform !== 'win32' ? '/' : '\\';
     const simplifiedStack = stack.split('\n')[2].split(pathDelimiter);
     const file = simplifiedStack[simplifiedStack.length - 1].split(')')[0];
-    argumentValues.unshift(`${file} ::`);
+    argumentValues.unshift(`${file} :: `);
 
-    argumentValues.unshift(`${time(':')} :: ${cluster.isMaster ? "Master" : "Child"} ID-${process.pid} ::`);
+    argumentValues.unshift(`${time(':')} :: ${cluster.isMaster ? "Master" : "Child"} ID - ${process.pid} :: `);
 
     console.log.apply(null, argumentValues);
 }
 
+function initializeDb() {
+    const db = require('better-sqlite3')('./src/database.db', {});
+
+    // fix concurrency issues
+    db.pragma('journal_mode = WAL');
+
+    setInterval(fs.stat.bind(null, './src/database.db-wal', (err, stat) => {
+        if (err) {
+            if (err.code !== 'ENOENT') throw err;
+        } else if (stat.size / (1024 * 1024) > 50) {
+            db.pragma('wal_checkpoint(RESTART)');
+        }
+    }), 5000).unref();
+
+    if (!fs.existsSync('./src/backups')) fs.mkdirSync('./src/backups');
+    db.backup(`./src/backups/backup-${time('-')}.db`);
+    setInterval(() => {
+        db.backup(`./src/backups/backup-${time('-')}.db`);
+    }, 1.44e+7).unref();// every 4 hours
+
+    db.transaction((statements) => {
+        statements.forEach((statement) => {
+            db.prepare(statement).run();
+        })
+    }).immediate(initialStatements);
+}
+
 if (cluster.isMaster) {
 
-    const db = require('better-sqlite3')('./src/database.db', { fileMustExist: true });
-
-// fix concurrency issues
-db.pragma('journal_mode = WAL');
-setInterval(fs.stat.bind(null, './src/database.db-wal', (err, stat) => {
-    if (err) {
-      if (err.code !== 'ENOENT') throw err;
-    } else if (stat.size / (1024*1024) > 50) {
-      db.pragma('wal_checkpoint(RESTART)');
-    }
-  }), 5000).unref();
-
-  if(!fs.existsSync('./src/backups')) fs.mkdirSync('./src/backups');
-
-setInterval(()=>{
-    db.backup(`./src/backups/backup-${time('-')}.db`);
-}, 1.44e+7).unref();// every 4 hours
+    initializeDb();
 
     // Take advantage of multiple CPUs
     const cpus = os.cpus().length;
@@ -81,5 +127,5 @@ setInterval(()=>{
         }
     });
 } else {
-     require('./dbProcess');
+    require('./dbProcess');
 }
