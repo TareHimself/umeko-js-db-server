@@ -2,7 +2,7 @@
 const cluster = require('cluster');
 const axios = require('axios');
 const fs = require('fs');
-const db = require('./sqlite')
+const db = require('../src/sqlite')
 
 function verifyRequest(request) {
     if (request.get('x-api-key') === undefined) return false;
