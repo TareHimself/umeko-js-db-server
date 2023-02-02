@@ -81,3 +81,5 @@ src/backups
 *.db
 *.db-wal
 *.db-shm
+
+dist/*
