@@ -12,7 +12,7 @@ app.use(cors());
 app.set('trust proxy', true)
 
 
-const port = process.argv.includes('--debug') ? 9000 : 8080;
+const port = process.argv.includes('--debug') ? 9002 : 8080;
 
 app.get('/', async (req, res) => {
     res.send(buildResponse("Not Implemented", true))

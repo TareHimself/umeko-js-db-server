@@ -11,7 +11,7 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 app.set('trust proxy', true);
-const port = process.argv.includes('--debug') ? 9000 : 8080;
+const port = process.argv.includes('--debug') ? 9002 : 8080;
 app.get('/', async (req, res) => {
     res.send((0, utils_1.buildResponse)("Not Implemented", true));
 });

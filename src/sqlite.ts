@@ -27,7 +27,7 @@ if (cluster.isPrimary) {
         `
     CREATE TABLE IF NOT EXISTS users(
         id TEXT PRIMARY KEY,
-        card TEXT DEFAULT "${encodeOptions({ color: "", id: "", url: "", opacity: "0.8" })}",
+        card TEXT DEFAULT "${encodeOptions({ color: "", bg_delete: "", bg: "", opacity: "0.8" })}",
         opts TEXT DEFAULT "${encodeOptions({})}",
         flags INTEGER DEFAULT 0
     ) WITHOUT ROWID;
