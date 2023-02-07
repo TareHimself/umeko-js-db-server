@@ -1,8 +1,9 @@
 import cors from 'cors';
 import express from 'express';
 import http from 'http';
+import { IDatabaseGuildSettings, IDatabaseUserSettings } from './framework';
 import { getGuilds, getLevels, getUsers, tDeleteGuilds, tDeleteLevels, tDeleteUsers, tInsertGuilds, tInsertLevels, tInsertUsers, tUpdateGuilds, tUpdateLevels, tUpdateUsers } from './sqlite';
-import { IGuildData, IGuildUpdate, ILevelData, ILevelUpdate, IQueryParameterValidation, IUserData, IUserUpdate } from './types';
+import { IGuildUpdate, ILevelData, ILevelUpdate, IQueryParameterValidation, IUserUpdate } from './types';
 import { buildResponse, getQueryParameters, log } from './utils';
 
 const app = express();
@@ -83,7 +84,7 @@ app.post('/guilds', (req, res) => {
 
 
 app.put('/guilds', (req, res) => {
-    const data = req.body as IGuildData[];
+    const data = req.body as IDatabaseGuildSettings[];
 
     if (!data.forEach || !data.length) {
         res.send(buildResponse("An array of new data is required", true))
@@ -97,15 +98,6 @@ app.put('/guilds', (req, res) => {
         res.send(buildResponse(error.message, true))
     }
 });
-const sample: IGuildData = {
-    id: '',
-    bot_opts: '',
-    join_opts: '',
-    leave_opts: '',
-    twitch_opts: '',
-    level_opts: '',
-    opts: ''
-}
 // console.log(JSON.stringify(sample))
 
 
@@ -157,7 +149,7 @@ app.post('/levels', (req, res) => {
 });
 
 
-app.put('/level', (req, res) => {
+app.put('/levels', (req, res) => {
     const data = req.body as ILevelData[];
 
     if (!data.forEach || !data.length) {
@@ -235,7 +227,7 @@ app.post('/users', (req, res) => {
 
 
 app.put('/users', (req, res) => {
-    const data = req.body as IUserData[];
+    const data = req.body as IDatabaseUserSettings[];
 
     if (!data.forEach || !data.length) {
         res.send(buildResponse("An array of new data is required", true))

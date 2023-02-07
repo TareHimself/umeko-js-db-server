@@ -1,9 +1,10 @@
-import { encodeOptions } from "./utils";
+import { log } from "./utils";
 import path from 'path';
 import Database from 'better-sqlite3';
 import cluster from 'cluster';
 import * as fs from 'fs';
-import { IGuildData, IGuildUpdate, ILevelData, ILevelUpdate, IUserData, IUserUpdate } from "./types";
+import { IGuildUpdate, ILevelData, ILevelUpdate, IUserUpdate } from "./types";
+import { FrameworkConstants, IDatabaseGuildSettings, IDatabaseUserSettings } from "./framework";
 
 const DATABASE_DIR = path.join(process.cwd(), 'db')
 if (!fs.existsSync(DATABASE_DIR)) {
@@ -16,20 +17,20 @@ if (cluster.isPrimary) {
         `
     CREATE TABLE IF NOT EXISTS guilds(
         id TEXT PRIMARY KEY,
-        bot_opts TEXT DEFAULT "${encodeOptions({ color: "#2f3136", nickname: "Umeko", locale: "en" })}",
-        join_opts TEXT DEFAULT "${encodeOptions({})}",
-        leave_opts TEXT DEFAULT "${encodeOptions({})}",
-        twitch_opts TEXT DEFAULT "${encodeOptions({})}",
-        level_opts TEXT DEFAULT "${encodeOptions({})}",
-        opts TEXT DEFAULT "${encodeOptions({})}"
+        bot_opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.bot_opts}",
+        join_opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.join_opts}",
+        leave_opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.leave_opts}",
+        twitch_opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.twitch_opts}",
+        level_opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.level_opts}",
+        opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_GUILD_SETTINGS.opts}"
     ) WITHOUT ROWID;
     `,
         `
     CREATE TABLE IF NOT EXISTS users(
         id TEXT PRIMARY KEY,
-        card TEXT DEFAULT "${encodeOptions({ color: "", bg_delete: "", bg: "", opacity: "0.8" })}",
-        opts TEXT DEFAULT "${encodeOptions({})}",
-        flags INTEGER DEFAULT 0
+        card TEXT DEFAULT "${FrameworkConstants.DEFAULT_USER_SETTINGS.card}",
+        opts TEXT DEFAULT "${FrameworkConstants.DEFAULT_USER_SETTINGS.opts}",
+        flags INTEGER DEFAULT ${FrameworkConstants.DEFAULT_USER_SETTINGS.flags}
     ) WITHOUT ROWID;
     `,
         `
@@ -67,14 +68,16 @@ if (cluster.isPrimary) {
     ).unref();
 
     db.transaction((statements) => {
+
         statements.forEach((statement) => {
+            log(statement);
             db.prepare(statement).run();
         });
     }).immediate(TABLE_STATEMENTS);
 }
 
-const insertGuildStatement = db.prepare<IGuildData>('INSERT INTO guilds VALUES (@id,@bot_opts,@join_opts,@leave_opts,@twitch_opts,@level_opts,@opts)')
-const insertUserStatement = db.prepare<IUserData>('INSERT INTO users VALUES (@id,@card,@opts,@flags)')
+const insertGuildStatement = db.prepare<IDatabaseGuildSettings>('INSERT INTO guilds VALUES (@id,@bot_opts,@join_opts,@leave_opts,@twitch_opts,@level_opts,@opts)')
+const insertUserStatement = db.prepare<IDatabaseUserSettings>('INSERT INTO users VALUES (@id,@card,@opts,@flags)')
 const insertLevelStatement = db.prepare<ILevelData>('INSERT INTO levels VALUES (@user,@guild,@level,@xp)')
 const updateLevelStatement = db.prepare<ILevelUpdate>('UPDATE levels SET level=@level, xp=@xp WHERE user=@user AND guild=@guild')
 
@@ -82,13 +85,13 @@ export function getGuilds(guildIds: string[]) {
     const InStatement = `(${guildIds.map(a => `'${a}'`).join(',')})`;
 
     console.log(`SELECT * FROM guilds WHERE id IN ${InStatement}`)
-    return db.prepare(`SELECT * FROM guilds WHERE id IN ${InStatement}`).all() as IGuildData[];
+    return db.prepare(`SELECT * FROM guilds WHERE id IN ${InStatement}`).all() as IDatabaseGuildSettings[];
 }
 
 export function getUsers(userIds: string[]) {
     const InStatement = `(${userIds.map(a => `'${a}'`).join(',')})`;
 
-    return db.prepare(`SELECT * FROM users WHERE id IN ${InStatement}`).all() as IUserData[];
+    return db.prepare(`SELECT * FROM users WHERE id IN ${InStatement}`).all() as IDatabaseUserSettings[];
 }
 
 export function getLevels(guildIds: string[]) {
@@ -97,13 +100,13 @@ export function getLevels(guildIds: string[]) {
     return db.prepare(`SELECT * FROM levels WHERE guild IN ${InStatement}`).all() as ILevelData[];
 }
 
-const tInsertGuilds = db.transaction((data: IGuildData[]) => {
+const tInsertGuilds = db.transaction((data: IDatabaseGuildSettings[]) => {
     for (let i = 0; i < data.length; i++) {
         insertGuildStatement.run(data[i])
     }
 })
 
-const tInsertUsers = db.transaction((data: IUserData[]) => {
+const tInsertUsers = db.transaction((data: IDatabaseUserSettings[]) => {
     for (let i = 0; i < data.length; i++) {
         insertUserStatement.run(data[i])
     }

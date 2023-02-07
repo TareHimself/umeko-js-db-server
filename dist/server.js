@@ -75,15 +75,6 @@ app.put('/guilds', (req, res) => {
         res.send((0, utils_1.buildResponse)(error.message, true));
     }
 });
-const sample = {
-    id: '',
-    bot_opts: '',
-    join_opts: '',
-    leave_opts: '',
-    twitch_opts: '',
-    level_opts: '',
-    opts: ''
-};
 app.delete('/guilds', async (req, res) => {
     const query = await (0, utils_1.getQueryParameters)(req.query, GET_IDS_PARAMETERS);
     if (query) {
@@ -125,7 +116,7 @@ app.post('/levels', (req, res) => {
         res.send((0, utils_1.buildResponse)(error.message, true));
     }
 });
-app.put('/level', (req, res) => {
+app.put('/levels', (req, res) => {
     const data = req.body;
     if (!data.forEach || !data.length) {
         res.send((0, utils_1.buildResponse)("An array of new data is required", true));

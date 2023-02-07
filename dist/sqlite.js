@@ -32,6 +32,7 @@ const path_1 = __importDefault(require("path"));
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const cluster_1 = __importDefault(require("cluster"));
 const fs = __importStar(require("fs"));
+const framework_1 = require("./framework");
 const DATABASE_DIR = path_1.default.join(process.cwd(), 'db');
 if (!fs.existsSync(DATABASE_DIR)) {
     fs.mkdirSync(DATABASE_DIR, { recursive: true });
@@ -42,20 +43,20 @@ if (cluster_1.default.isPrimary) {
         `
     CREATE TABLE IF NOT EXISTS guilds(
         id TEXT PRIMARY KEY,
-        bot_opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({ color: "#2f3136", nickname: "Umeko", locale: "en" })}",
-        join_opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}",
-        leave_opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}",
-        twitch_opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}",
-        level_opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}",
-        opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}"
+        bot_opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.bot_opts}",
+        join_opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.join_opts}",
+        leave_opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.leave_opts}",
+        twitch_opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.twitch_opts}",
+        level_opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.level_opts}",
+        opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_GUILD_SETTINGS.opts}"
     ) WITHOUT ROWID;
     `,
         `
     CREATE TABLE IF NOT EXISTS users(
         id TEXT PRIMARY KEY,
-        card TEXT DEFAULT "${(0, utils_1.encodeOptions)({ color: "", bg_delete: "", bg: "", opacity: "0.8" })}",
-        opts TEXT DEFAULT "${(0, utils_1.encodeOptions)({})}",
-        flags INTEGER DEFAULT 0
+        card TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_USER_SETTINGS.card}",
+        opts TEXT DEFAULT "${framework_1.FrameworkConstants.DEFAULT_USER_SETTINGS.opts}",
+        flags INTEGER DEFAULT ${framework_1.FrameworkConstants.DEFAULT_USER_SETTINGS.flags}
     ) WITHOUT ROWID;
     `,
         `
@@ -88,6 +89,7 @@ if (cluster_1.default.isPrimary) {
     setInterval(checkDbSize, 5000).unref();
     db.transaction((statements) => {
         statements.forEach((statement) => {
+            (0, utils_1.log)(statement);
             db.prepare(statement).run();
         });
     }).immediate(TABLE_STATEMENTS);

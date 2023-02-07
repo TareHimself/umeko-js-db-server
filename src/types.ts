@@ -1,32 +1,17 @@
+import { IDatabaseGuildSettings, IDatabaseUserSettings } from "./framework";
 
-export interface IGuildData {
-    id: string;
-    bot_opts: string;
-    join_opts: string;
-    leave_opts: string;
-    twitch_opts: string;
-    level_opts: string;
-    opts: string;
+
+export interface IGuildUpdate extends Partial<IDatabaseGuildSettings> {
+    id: IDatabaseGuildSettings['id']
 }
 
-export interface IGuildUpdate extends Partial<IGuildData> {
-    id: IGuildData['id']
-}
-
-export interface IUserData {
-    id: string;
-    card: string;
-    opts: string;
-    flags: number;
-}
-
-export interface IUserUpdate extends Partial<IUserData> {
-    id: IUserData['id'];
+export interface IUserUpdate extends Partial<IDatabaseUserSettings> {
+    id: IDatabaseUserSettings['id'];
 }
 
 export interface ILevelData {
-    user: IUserData['id'];
-    guild: IGuildData['id'];
+    user: IDatabaseUserSettings['id'];
+    guild: IDatabaseGuildSettings['id'];
     level: number;
     xp: number;
 }
