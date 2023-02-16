@@ -70,7 +70,6 @@ if (cluster.isPrimary) {
     db.transaction((statements) => {
 
         statements.forEach((statement) => {
-            log(statement);
             db.prepare(statement).run();
         });
     }).immediate(TABLE_STATEMENTS);
@@ -83,8 +82,6 @@ const updateLevelStatement = db.prepare<ILevelUpdate>('UPDATE levels SET level=@
 
 export function getGuilds(guildIds: string[]) {
     const InStatement = `(${guildIds.map(a => `'${a}'`).join(',')})`;
-
-    console.log(`SELECT * FROM guilds WHERE id IN ${InStatement}`)
     return db.prepare(`SELECT * FROM guilds WHERE id IN ${InStatement}`).all() as IDatabaseGuildSettings[];
 }
 
