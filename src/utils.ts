@@ -23,3 +23,21 @@ export async function getQueryParameters(query: Record<string, string>, getters:
 
     return results;
 }
+
+export function pad(number: number) {
+    return number < 10 ? `0${number}` : `${number}`;
+}
+
+/**
+ * Converts a date object to an integer formated as YYYYMMDDHHMMSS
+ */
+export function TimeToInteger(date: Date) {
+    return parseInt(
+        `${date.getUTCFullYear()}${pad(date.getUTCMonth())}${pad(
+            date.getUTCDate()
+        )}${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(
+            date.getUTCSeconds()
+        )}`,
+        10
+    );
+}

@@ -1,14 +1,20 @@
-import { log } from "./utils";
+import { log, TimeToInteger } from "./utils";
 import path from 'path';
 import Database from 'better-sqlite3';
 import cluster from 'cluster';
 import * as fs from 'fs';
 import { IGuildUpdate, ILevelData, ILevelUpdate, IUserUpdate } from "./types";
 import { FrameworkConstants, IDatabaseGuildSettings, IDatabaseUserSettings } from "./framework";
-
+const BACKUP_INTERVAL = 1000 * 60 * 60 * 4
 const DATABASE_DIR = path.join(process.cwd(), 'db')
+const BACKUP_DIR = path.join(process.cwd(), 'backups')
+
 if (!fs.existsSync(DATABASE_DIR)) {
     fs.mkdirSync(DATABASE_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
 const db = Database(path.join(DATABASE_DIR, 'persistent.db'))
@@ -63,8 +69,21 @@ if (cluster.isPrimary) {
         }
 
     }
+
+    const backupDb = async () => {
+        try {
+            db.backup(path.join(BACKUP_DIR, `backup-${TimeToInteger(new Date())}.db`))
+        } catch (error: any) {
+            log("Database Backup Error", error)
+        }
+    }
+
     setInterval(checkDbSize,
         5000
+    ).unref();
+
+    setInterval(backupDb,
+        BACKUP_INTERVAL
     ).unref();
 
     db.transaction((statements) => {
