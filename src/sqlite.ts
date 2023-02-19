@@ -92,6 +92,8 @@ if (cluster.isPrimary) {
             db.prepare(statement).run();
         });
     }).immediate(TABLE_STATEMENTS);
+
+    backupDb()
 }
 
 const insertGuildStatement = db.prepare<IDatabaseGuildSettings>('INSERT INTO guilds VALUES (@id,@bot_opts,@join_opts,@leave_opts,@twitch_opts,@level_opts,@opts)')
